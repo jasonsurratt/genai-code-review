@@ -1,5 +1,5 @@
 name: "ChatGPT GitHub Actions - JRS"
-description: "This GitHub Action automates code review for pull requests using OpenAI's GPT models. This is a clone of the original for personal testing."
+description: "This GitHub Action automates code review for "
 inputs:
   openai_api_key:  # id of input
     description: 'OpenAI API Key'
