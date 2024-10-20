@@ -1,8 +1,5 @@
-name: "ChatGPT GitHub Actions"
-description: "This GitHub Action automates code review for pull requests using OpenAI's GPT models. By integrating this action into your CI/CD pipeline, it provides detailed, AI-generated reviews of your code directly within the PR comments. This tool helps maintain code quality, ensures adherence to best practices, and highlights potential improvements and bugs."
-inputs:
-  openai_api_key:  # id of input
-    description: 'OpenAI API Key'
+name: "ChatGPT GitHub Actions - JRS"
+description: "This GitHub Action automates code review for pull requests using OpenAI's GPT models. This is a clone of the original for personal testing."
     required: true
     default: ''
   github_token:  # id of input
