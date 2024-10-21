@@ -202,8 +202,6 @@ class GithubClient:
         """
         try:
             pr = self.get_pr(pr_id)
-            help(pr)
-            exit(-1)
             review = pr.create_review(body=body, event=event)
             logging.info("Posted %s review to PR ID: %s", event.lower(), pr_id)
             return review
