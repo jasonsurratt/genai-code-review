@@ -243,24 +243,43 @@ def create_review_prompt(content, language, custom_prompt=None):
 
 def mark_previous_reviews_out_of_date(github_client, pr_id):
     """
-    Retrieve existing pull request reviews, identify previous ChatGPT reviews,
-    and dismiss them as out of date.
+    Retrieve existing comments on the PR, identify previous ChatGPT reviews,
+    and mark them as out of date.
 
     Args:
         github_client (GithubClient): The GitHub client instance.
         pr_id (int): The pull request ID.
     """
-    logging.info("Checking for existing ChatGPT code review reviews to dismiss as out of date.")
-    reviews = github_client.get_reviews(pr_id)
+    logging.info("Checking for existing ChatGPT code review comments to mark as out of date.")
+    comments = github_client.get_comments(pr_id)
+    print(comments)
 
+    for comment in comments:
+        if is_chatgpt_review_comment(comment):
+            logging.info(f"Found existing ChatGPT review comment ID: {comment['id']}")
+            updated_body = "This review has been superseded by a newer review."
+            github_client.update_comment(pr_id, comment["id"], updated_body)
+            logging.info(f"Marked comment ID {comment['id']} as out of date.")
+
+    reviews = github_client.get_reviews(pr_id)
     for review in reviews:
-        if is_chatgpt_review(review):
+        if review.body.startswith("ChatGPT's code review:"):
             logging.info(f"Found existing ChatGPT review ID: {review.id}")
-            success = github_client.dismiss_review(pr_id, review.id, reason="OUT_OF_DATE")
-            if success:
-                logging.info(f"Dismissed review ID {review.id} as out of date.")
-            else:
-                logging.error(f"Failed to dismiss review ID {review.id}.")
+            review.edit("This review has been superseded by a newer review.")
+            logging.info(f"Marked review ID {review.id} as out of date.")
+
+
+def is_chatgpt_review_comment(comment):
+    """
+    Determine if a comment is a ChatGPT code review comment based on its content.
+
+    Args:
+        comment (dict): The comment data retrieved from GitHub.
+
+    Returns:
+        bool: True if it's a ChatGPT review comment, False otherwise.
+    """
+    return comment["body"].startswith("ChatGPT's code review:")
 
 
 def is_chatgpt_review(review):
