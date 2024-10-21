@@ -181,9 +181,11 @@ def analyze_patch(github_client, openai_client, pr_id, patch_content, language, 
                     f"ChatGPT was unable to process the response about {file_name}: {str(e)}"
                 )
 
+    # mark_previous_reviews_out_of_date(github_client, pr_id)
+
     review_prompt = create_review_prompt(combined_diff, language, custom_prompt)
     summary = openai_client.generate_response(review_prompt)
-    github_client.post_comment(pr_id, f"ChatGPT's code review:\n {summary}")
+    github_client.post_review(pr_id, f"ChatGPT's code review:\n {summary}")
 
 def create_review_prompt(content, language, custom_prompt=None):
     """
@@ -237,6 +239,41 @@ def create_review_prompt(content, language, custom_prompt=None):
         f"   cursor.execute('SELECT * FROM users WHERE username = %s', (username,))\n"
         f"   ```"
     )
+
+
+def mark_previous_reviews_out_of_date(github_client, pr_id):
+    """
+    Retrieve existing pull request reviews, identify previous ChatGPT reviews,
+    and dismiss them as out of date.
+
+    Args:
+        github_client (GithubClient): The GitHub client instance.
+        pr_id (int): The pull request ID.
+    """
+    logging.info("Checking for existing ChatGPT code review reviews to dismiss as out of date.")
+    reviews = github_client.get_reviews(pr_id)
+
+    for review in reviews:
+        if is_chatgpt_review(review):
+            logging.info(f"Found existing ChatGPT review ID: {review.id}")
+            success = github_client.dismiss_review(pr_id, review.id, reason="OUT_OF_DATE")
+            if success:
+                logging.info(f"Dismissed review ID {review.id} as out of date.")
+            else:
+                logging.error(f"Failed to dismiss review ID {review.id}.")
+
+
+def is_chatgpt_review(review):
+    """
+    Determine if a review is a ChatGPT code review based on its body.
+
+    Args:
+        review (dict): The review data retrieved from GitHub.
+
+    Returns:
+        bool: True if it's a ChatGPT review, False otherwise.
+    """
+    return review.body.startswith("ChatGPT's code review:")
 
 
 if __name__ == "__main__":

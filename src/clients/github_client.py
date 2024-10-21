@@ -71,6 +71,18 @@ class GithubClient:
             logging.error("Error retrieving comments for PR ID %s: %s", pr_id, e)
             raise
 
+    def get_comments(self, pr_id):
+        url = f"https://api.github.com/repos/{self.repo_name}/issues/{pr_id}/comments"
+        headers = {
+            "Authorization": f"token {os.getenv('GITHUB_TOKEN')}",
+            "Accept": "Accept: application/vnd.github+json",
+        }
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        comments = response.json()
+        # Return list of dictionaries with 'id' and 'body'
+        return [{"id": comment["id"], "body": comment["body"]} for comment in comments]
+
     def post_comment(self, pr_id, body):
         """
         Post a comment to a pull request.
@@ -156,3 +168,73 @@ class GithubClient:
         except requests.RequestException as e:
             logging.error("Error retrieving patch for PR ID %s: %s", pr_id, e)
             raise
+
+    def get_reviews(self, pr_id):
+        """
+        Retrieve all reviews for a specific pull request.
+
+        Args:
+            pr_id (int): The pull request ID.
+
+        Returns:
+            PaginatedList: The list of pull request reviews.
+        """
+        try:
+            pr = self.get_pr(pr_id)
+            reviews = pr.get_reviews()
+            logging.info("Retrieved reviews for PR ID: %s", pr_id)
+            return reviews
+        except Exception as e:
+            logging.error("Error retrieving reviews for PR ID %s: %s", pr_id, e)
+            raise
+
+    def post_review(self, pr_id, body, event="COMMENT"):
+        """
+        Post a new review to a pull request.
+
+        Args:
+            pr_id (int): The pull request ID.
+            body (str): The content of the review.
+            event (str): The type of review event ('APPROVE', 'REQUEST_CHANGES', 'COMMENT').
+
+        Returns:
+            PullRequestReview: The created review object.
+        """
+        try:
+            pr = self.get_pr(pr_id)
+            help(pr)
+            exit(-1)
+            review = pr.create_review(body=body, event=event)
+            logging.info("Posted %s review to PR ID: %s", event.lower(), pr_id)
+            return review
+        except Exception as e:
+            logging.error("Error posting %s review to PR ID %s: %s", event.lower(), pr_id, e)
+            raise
+
+    def dismiss_review(self, pr_id, review_id, reason="OUT_OF_DATE"):
+        """
+        Dismiss an existing review with a specified reason.
+
+        Args:
+            pr_id (int): The pull request ID.
+            review_id (int): The ID of the review to dismiss.
+            reason (str): The reason for dismissal ('OUT_OF_DATE', 'SUPPRESSED_BY_OTHER_REASON', etc.).
+
+        Returns:
+            bool: True if dismissal was successful, False otherwise.
+        """
+        try:
+            url = f"https://api.github.com/repos/{self.repo_name}/pulls/{pr_id}/reviews/{review_id}/dismissals"
+            payload = {"message": "This review has been superseded by a newer review.", "dismissal_reason": reason}
+            headers = {
+                "Authorization": f"token {os.getenv('GITHUB_TOKEN')}",
+                "Accept": "application/vnd.github+json",
+                "Content-Type": "application/json",
+            }
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            logging.info("Dismissed review ID %s for PR ID %s with reason: %s", review_id, pr_id, reason)
+            return True
+        except requests.RequestException as e:
+            logging.error("Error dismissing review ID %s for PR ID %s: %s", review_id, pr_id, e)
+            return False
