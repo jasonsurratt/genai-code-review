@@ -181,7 +181,7 @@ def analyze_patch(github_client, openai_client, pr_id, patch_content, language, 
                     f"ChatGPT was unable to process the response about {file_name}: {str(e)}"
                 )
 
-    # mark_previous_reviews_out_of_date(github_client, pr_id)
+    mark_previous_reviews_out_of_date(github_client, pr_id)
 
     review_prompt = create_review_prompt(combined_diff, language, custom_prompt)
     summary = openai_client.generate_response(review_prompt)
