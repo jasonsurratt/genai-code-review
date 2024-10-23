@@ -171,9 +171,9 @@ def analyze_patch(github_client, openai_client, pr_id, patch_content, language, 
 
     combined_diff = ""
     for diff_text in patch_content.split("diff"):
-        if diff_text:
+        if diff_text and "+++ b/" in diff_text:
             try:
-                file_name = diff_text.split("b/")[1].splitlines()[0]
+                file_name = diff_text.split("+++ b/")[1].splitlines()[0]
                 logging.info("Processing diff for file: %s", file_name)
                 combined_diff += f"\n### File: {file_name}\n```diff\n{diff_text}```\n"
             except (TypeError, ValueError) as e:
