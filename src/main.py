@@ -170,8 +170,12 @@ def analyze_patch(github_client, openai_client, pr_id, patch_content, language, 
     logging.info("patch_content:\n%s", patch_content)
 
     combined_diff = ""
-    for diff_text in patch_content.split("diff"):
-        if diff_text and "+++ b/" in diff_text:
+    for diff_text in patch_content.split("diff --git a/"):
+        logging.info("Processing diff:\n%s", diff_text)
+        if diff_text:
+            if "+++ b/" not in diff_text:
+                logging.error("+++ b/ not found in diff text. This is likely due to the above diff split.")
+                github_client.post_comment(pr_id, f"ChatGPT was unable to process this diff text:\n{diff_text}")
             try:
                 file_name = diff_text.split("+++ b/")[1].splitlines()[0]
                 logging.info("Processing diff for file: %s", file_name)
