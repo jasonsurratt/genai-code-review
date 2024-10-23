@@ -167,6 +167,8 @@ def analyze_patch(github_client, openai_client, pr_id, patch_content, language, 
     """
     logging.info("Analyzing patch content for PR ID: %s", pr_id)
 
+    logging.info("patch_content:\n%s", patch_content)
+
     combined_diff = ""
     for diff_text in patch_content.split("diff"):
         if diff_text:
